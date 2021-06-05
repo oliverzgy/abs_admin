@@ -1,25 +1,26 @@
 use dashmap::DashMap;
-use serde::Serialize;
 use serde::de::DeserializeOwned;
+use serde::Serialize;
 
-use crate::error::{Error, Result};
+use crate::error::Result;
 
-///缓存服务
-pub struct MemCacheService {
+///内存缓存服务
+pub struct MemService {
     pub cache: DashMap<String, String>,
 }
 
-impl Default for MemCacheService {
+impl Default for MemService {
     fn default() -> Self {
         Self {
-            cache: Default::default()
+            cache: Default::default(),
         }
     }
 }
 
-impl MemCacheService {
+impl MemService {
     pub fn set_string(&self, k: &str, v: &str) -> Result<String> {
-        return self.cache.insert(k.to_string(), v.to_string()).ok_or(Error::E("save cache none".to_string()));
+        self.cache.insert(k.to_string(), v.to_string());
+        return Ok(v.to_string());
     }
     pub fn get_string(&self, k: &str) -> Result<String> {
         let v = self.cache.get(k);
@@ -33,8 +34,8 @@ impl MemCacheService {
         }
     }
     pub fn set_json<T>(&self, k: &str, v: &T) -> Result<String>
-        where
-            T: Serialize,
+    where
+        T: Serialize,
     {
         let data = serde_json::to_string(v);
         if data.is_err() {
@@ -48,8 +49,8 @@ impl MemCacheService {
     }
 
     pub fn get_json<T>(&self, k: &str) -> Result<T>
-        where
-            T: DeserializeOwned,
+    where
+        T: DeserializeOwned,
     {
         let mut r = self.get_string(k)?;
         if r.is_empty() {

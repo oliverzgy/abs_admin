@@ -39,6 +39,11 @@ pub struct ApplicationConfig {
 
     ///权限缓存类型
     pub auth_cache_type: String,
+
+    ///重试
+    pub login_fail_retry: i64,
+    ///重试等待时间
+    pub login_fail_retry_wait_sec: i64,
 }
 
 ///默认配置
@@ -98,6 +103,14 @@ impl Default for ApplicationConfig {
             auth_cache_type: get_cfg(&docs, "auth_cache_type")
                 .as_str()
                 .unwrap_or("")
+                .to_owned(),
+            login_fail_retry: get_cfg(&docs, "login_fail_retry")
+                .as_i64()
+                .unwrap_or(0)
+                .to_owned(),
+            login_fail_retry_wait_sec: get_cfg(&docs, "login_fail_retry_wait_sec")
+                .as_i64()
+                .unwrap_or(0)
                 .to_owned(),
         };
 

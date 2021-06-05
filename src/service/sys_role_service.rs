@@ -1,6 +1,6 @@
+use crate::error::Result;
 use chrono::NaiveDateTime;
 use rbatis::core::value::DateTimeNow;
-use crate::error::Result;
 use rbatis::crud::CRUD;
 use rbatis::plugin::page::{Page, PageRequest};
 
@@ -10,7 +10,7 @@ use crate::domain::vo::SysRoleVO;
 use crate::service::CONTEXT;
 use crate::util::string::IsEmpty;
 use rbatis::plugin::snowflake::new_snowflake_id;
-use std::collections::{HashMap, BTreeMap};
+use std::collections::{BTreeMap, HashMap};
 
 const RES_KEY: &'static str = "sys_role:all";
 ///角色服务
@@ -75,7 +75,7 @@ impl SysRoleService {
                 .await;
         } else {
             js = CONTEXT
-                .mem_cache_service
+                .mem_service
                 .get_json::<Option<Vec<SysRole>>>(RES_KEY);
         }
         if js.is_err()
@@ -95,9 +95,9 @@ impl SysRoleService {
     pub async fn update_cache(&self) -> Result<Vec<SysRole>> {
         let all = CONTEXT.rbatis.fetch_list("").await?;
         if CONTEXT.config.auth_cache_type == "redis" {
-            CONTEXT.redis_service.set_json(RES_KEY, &all).await;
+            CONTEXT.redis_service.set_json(RES_KEY, &all).await?;
         } else {
-            CONTEXT.mem_cache_service.set_json(RES_KEY, &all);
+            CONTEXT.mem_service.set_json(RES_KEY, &all)?;
         }
         return Ok(all);
     }

@@ -1,4 +1,4 @@
-use std::collections::{HashMap, BTreeMap};
+use std::collections::{BTreeMap, HashMap};
 
 use rbatis::crud::CRUD;
 use rbatis::plugin::page::{Page, PageRequest};
@@ -42,7 +42,7 @@ impl SysResService {
         let mut datas = vec![];
         for x in data.records {
             let mut vo = SysResVO::from(&x);
-            vo.recursive_set_childs(&all_res_vo);
+            vo.set_childs_recursive(&all_res_vo);
             datas.push(vo);
         }
         let new_page = Page {
@@ -76,7 +76,7 @@ impl SysResService {
                 rbatis::make_table_field_vec!(old, name)
             )));
         }
-        let result=Ok(CONTEXT.rbatis.save("", arg).await?.rows_affected);
+        let result = Ok(CONTEXT.rbatis.save("", arg).await?.rows_affected);
         self.update_cache().await?;
         return result;
     }
@@ -92,7 +92,7 @@ impl SysResService {
             del: None,
             create_date: None,
         };
-        let result=Ok(CONTEXT.rbatis.update_by_id("", &mut data).await?);
+        let result = Ok(CONTEXT.rbatis.update_by_id("", &mut data).await?);
         self.update_cache().await?;
         return result;
     }
@@ -140,9 +140,7 @@ impl SysResService {
                 .get_json::<Option<Vec<SysRes>>>(RES_KEY)
                 .await;
         } else {
-            js = CONTEXT
-                .mem_cache_service
-                .get_json::<Option<Vec<SysRes>>>(RES_KEY);
+            js = CONTEXT.mem_service.get_json::<Option<Vec<SysRes>>>(RES_KEY);
         }
         if js.is_err()
             || js.as_ref().unwrap().is_none()
@@ -161,9 +159,9 @@ impl SysResService {
     pub async fn update_cache(&self) -> Result<Vec<SysRes>> {
         let all = CONTEXT.rbatis.fetch_list::<SysRes>("").await?;
         if CONTEXT.config.auth_cache_type == "redis" {
-            CONTEXT.redis_service.set_json(RES_KEY, &all).await;
+            CONTEXT.redis_service.set_json(RES_KEY, &all).await?;
         } else {
-            CONTEXT.mem_cache_service.set_json(RES_KEY, &all);
+            CONTEXT.mem_service.set_json(RES_KEY, &all)?;
         }
         return Ok(all);
     }
