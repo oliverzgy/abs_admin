@@ -5,6 +5,12 @@ pub struct ApplicationConfig {
     pub debug: bool,
     ///当前服务地址
     pub server_url: String,
+    ///DeepSeek API base URL
+    pub deepseek_api_base_url: String,
+    ///DeepSeek API key (prefer env var)
+    pub deepseek_api_key: String,
+    ///DeepSeek default model
+    pub deepseek_default_model: String,
     ///redis地址
     pub redis_url: String,
     /// 数据库地址
@@ -55,6 +61,18 @@ impl Default for ApplicationConfig {
         let result = Self {
             debug: get_cfg(&docs, "debug").as_bool().unwrap_or(true),
             server_url: get_cfg(&docs, "server_url")
+                .as_str()
+                .unwrap_or("")
+                .to_owned(),
+            deepseek_api_base_url: get_cfg(&docs, "deepseek_api_base_url")
+                .as_str()
+                .unwrap_or("")
+                .to_owned(),
+            deepseek_api_key: get_cfg(&docs, "deepseek_api_key")
+                .as_str()
+                .unwrap_or("")
+                .to_owned(),
+            deepseek_default_model: get_cfg(&docs, "deepseek_default_model")
                 .as_str()
                 .unwrap_or("")
                 .to_owned(),

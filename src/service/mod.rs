@@ -10,6 +10,7 @@ use sys_user_service::*;
 use crate::config::app_config::ApplicationConfig;
 use crate::service::mem_service::MemService;
 
+pub mod deepseek_service;
 mod mem_service;
 mod redis_service;
 mod sys_config_service;
