@@ -1,5 +1,6 @@
 use abs_admin::controller::{
-    img_controller, sys_res_controller, sys_role_controller, sys_user_controller,
+    deepseek_controller, img_controller, sys_res_controller, sys_role_controller,
+    sys_user_controller,
 };
 use abs_admin::service::CONTEXT;
 use actix_web::{web, App, HttpResponse, HttpServer, Responder};
@@ -33,6 +34,10 @@ async fn main() -> std::io::Result<()> {
             .route(
                 "/api/sys_user_detail",
                 web::post().to(sys_user_controller::detail),
+            )
+            .route(
+                "/api/deepseek_chat",
+                web::post().to(deepseek_controller::chat),
             )
             //TODO .route("/sys_log_out", web::post().to(user_controller::log_out))
             .route(

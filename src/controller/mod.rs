@@ -1,3 +1,4 @@
+pub mod deepseek_controller;
 pub mod img_controller;
 pub mod sys_res_controller;
 pub mod sys_role_controller;

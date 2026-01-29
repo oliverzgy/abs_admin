@@ -4,6 +4,12 @@ debug: true
 server_name: "dev"
 #server 地址
 server_url: "0.0.0.0:8000"
+#DeepSeek API base URL (OpenAI-compatible)
+deepseek_api_base_url: "https://api.deepseek.com/v1"
+#DeepSeek API key (or set DEEPSEEK_API_KEY env var)
+deepseek_api_key: ""
+#DeepSeek default model
+deepseek_default_model: "deepseek-chat"
 #redis地址
 redis_url: "redis://127.0.0.1:6379"
 #数据库地址
