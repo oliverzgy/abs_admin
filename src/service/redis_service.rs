@@ -1,12 +1,17 @@
 use std::time::Duration;
 
-use log::error;
+use log::{error, warn};
 use redis::aio::Connection;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
+use tokio::time::{sleep, timeout};
 
 use crate::error::{Error, Result};
 use redis::RedisResult;
+
+const REDIS_CONNECT_MAX_ATTEMPTS: usize = 3;
+const REDIS_CONNECT_TIMEOUT: Duration = Duration::from_secs(2);
+const REDIS_CONNECT_BACKOFF_BASE_MS: u64 = 200;
 
 ///缓存服务
 pub struct RedisService {
@@ -21,13 +26,43 @@ impl RedisService {
     }
 
     pub async fn get_conn(&self) -> Result<Connection> {
-        let conn = self.client.get_async_connection().await;
-        if conn.is_err() {
-            let err = format!("RedisService connect fail:{}", conn.err().unwrap());
-            error!("{}", err);
-            return Err(crate::error::Error::from(err));
+        let mut last_err: Option<String> = None;
+        for attempt in 1..=REDIS_CONNECT_MAX_ATTEMPTS {
+            let conn = timeout(REDIS_CONNECT_TIMEOUT, self.client.get_async_connection()).await;
+            match conn {
+                Ok(Ok(conn)) => return Ok(conn),
+                Ok(Err(err)) => {
+                    let msg = format!(
+                        "RedisService connect fail (attempt {}/{}): {}",
+                        attempt, REDIS_CONNECT_MAX_ATTEMPTS, err
+                    );
+                    warn!("{}", msg);
+                    last_err = Some(err.to_string());
+                }
+                Err(_) => {
+                    let msg = format!(
+                        "RedisService connect timeout (attempt {}/{} after {:?})",
+                        attempt, REDIS_CONNECT_MAX_ATTEMPTS, REDIS_CONNECT_TIMEOUT
+                    );
+                    warn!("{}", msg);
+                    last_err = Some(msg);
+                }
+            }
+
+            if attempt < REDIS_CONNECT_MAX_ATTEMPTS {
+                let backoff_ms =
+                    REDIS_CONNECT_BACKOFF_BASE_MS.saturating_mul(1u64 << (attempt - 1));
+                sleep(Duration::from_millis(backoff_ms)).await;
+            }
         }
-        return Ok(conn.unwrap());
+
+        let err = format!(
+            "RedisService connect fail after {} attempts: {}",
+            REDIS_CONNECT_MAX_ATTEMPTS,
+            last_err.unwrap_or_else(|| "unknown error".to_string())
+        );
+        error!("{}", err);
+        Err(crate::error::Error::from(err))
     }
 
     pub async fn set_json<T>(&self, k: &str, v: &T) -> Result<String>
